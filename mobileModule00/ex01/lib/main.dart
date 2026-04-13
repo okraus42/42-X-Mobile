@@ -23,75 +23,65 @@ class MyApp extends StatelessWidget {
   }
 }
 
-// Main screen widget
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
-  // Function executed when button is pressed
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+// This class holds the changing data (state)
+class _HomePageState extends State<HomePage> {
+  
+  // Store available texts
+  List<String> displayTexts = ["A simple text", "Hello World"];
+  // This variable stores the current text
+  // Declare variable without value first, needs to wait for displayTexts to be created
+
+  int idx = 0;
+
+  // Function triggered when button is pressed
   void handleButtonPress() {
-    // Prints output to the console (debug terminal)
+    setState(() {
+      idx ^= 1;
+    });
+
+    // Still prints to console
     print("Button pressed");
   }
 
   @override
   Widget build(BuildContext context) {
-    // Scaffold provides basic page structure
     return Scaffold(
       body: Center(
-        // Centers content in the middle of the screen
-        child: LayoutBuilder(
-          // Provides screen size information for responsiveness
-          builder: (context, constraints) {
-            return Column(
-              // Arranges children vertically
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
 
-              mainAxisAlignment: MainAxisAlignment.center,
-              // Centers children vertically
-
-              crossAxisAlignment: CrossAxisAlignment.center,
-              // Centers children horizontally
-
-              mainAxisSize: MainAxisSize.min,
-              // Column takes only needed space
-
-              children: [
-                // Text container with background styling
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 3,
-                  ),
-
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF808000), // olive color
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-
-                  child: const Text(
-                    "A simple text",
-                    style: TextStyle(
-                      fontSize: 24,
-                      color: Colors.white,
-                    ),
-                  ),
+            // TEXT (now dynamic)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+              decoration: BoxDecoration(
+                color: const Color(0xFF808000),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                displayTexts[idx], // 👈 uses variable instead of fixed text
+                style: const TextStyle(
+                  fontSize: 24,
+                  color: Colors.white,
                 ),
+              ),
+            ),
 
-                // Space between text and button
-                const SizedBox(height: 8),
+            const SizedBox(height: 8),
 
-                // Button widget
-                ElevatedButton(
-                  onPressed: handleButtonPress, // button click handler
-
-                  style: ElevatedButton.styleFrom(
-                    foregroundColor: const Color(0xFF808000), // text color
-                  ),
-
-                  child: const Text("Click me"),
-                ),
-              ],
-            );
-          },
+            // BUTTON
+            ElevatedButton(
+              onPressed: handleButtonPress,
+              child: const Text("Click me"),
+            ),
+          ],
         ),
       ),
     );
