@@ -10,7 +10,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false,
+      debugShowCheckedModeBanner: true, // show debug banner
       title: 'Weather App',
       theme: ThemeData(primarySwatch: Colors.blue),
       home: const HomePage(),

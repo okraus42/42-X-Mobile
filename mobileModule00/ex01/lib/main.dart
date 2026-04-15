@@ -60,7 +60,7 @@ class _HomePageState extends State<HomePage> {
 
             // TEXT (now dynamic)
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+              padding: const EdgeInsets.symmetricc(horizontal: 6, vertical: 3),
               decoration: BoxDecoration(
                 color: const Color(0xFF808000),
                 borderRadius: BorderRadius.circular(8),
