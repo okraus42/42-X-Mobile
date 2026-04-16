@@ -1,3 +1,5 @@
+// pages/home_page.dart
+
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 
@@ -119,46 +121,74 @@ class _HomePageState extends State<HomePage> {
     return DefaultTabController(
       length: 3,
       child: Scaffold(
-        resizeToAvoidBottomInset: true, // ✅ FIX keyboard overflow
+        resizeToAvoidBottomInset: true,
 
-        body: SafeArea(
-          child: Column(
-            children: [
-              // ✅ SEARCH BAR (fixed height, safe in landscape)
-              Padding(
-                padding: const EdgeInsets.all(8),
-                child: SearchBarWidget(
-                  controller: _controller,
-                  onSubmitted: _handleSearch,
-                  onCitySelected: _handleCitySelected,
-                  onLocationPressed: _handleLocation,
-                ),
+        // 🌩️ BACKGROUND LAYER (GLOBAL FIXED IMAGE)
+        body: Stack(
+          children: [
+            // BACKGROUND IMAGE (always behind everything)
+            Positioned.fill(
+              child: Image.asset(
+                'assets/storm.jpg',
+                fit: BoxFit.cover,
               ),
+            ),
 
-              // ✅ TAB CONTENT (ONLY EXPANDED AREA)
-              Expanded(
-                child: TabBarView(
-                  physics: const ClampingScrollPhysics(),
-                  children: [
-                    CurrentTab(weather: _weather, error: _error),
-                    TodayTab(weather: _weather, error: _error),
-                    WeeklyTab(weather: _weather, error: _error),
+            // DARK OVERLAY (improves readability)
+            Positioned.fill(
+              child: Container(
+                color: Colors.black.withOpacity(0.35),
+              ),
+            ),
+
+            // MAIN CONTENT
+            SafeArea(
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: SearchBarWidget(
+                      controller: _controller,
+                      onSubmitted: _handleSearch,
+                      onCitySelected: _handleCitySelected,
+                      onLocationPressed: _handleLocation,
+                    ),
+                  ),
+
+                  Expanded(
+                    child: TabBarView(
+                      physics: const ClampingScrollPhysics(),
+                      children: [
+                        CurrentTab(weather: _weather, error: _error),
+                        TodayTab(weather: _weather, error: _error),
+                        WeeklyTab(weather: _weather, error: _error),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // TAB BAR MUST ALSO FLOAT ABOVE BACKGROUND
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: Material(
+                color: Colors.transparent,
+                child: TabBar(
+                  indicatorColor: Colors.white,
+                  labelColor: Colors.white,
+                  unselectedLabelColor: Colors.white70,
+                  tabs: const [
+                    Tab(text: "Currently"),
+                    Tab(text: "Today"),
+                    Tab(text: "Weekly"),
                   ],
                 ),
               ),
-            ],
-          ),
-        ),
-
-        // ❗ IMPORTANT: TabBar must NOT force layout height
-        bottomNavigationBar: const Material(
-          child: TabBar(
-            tabs: [
-              Tab(text: "Currently"),
-              Tab(text: "Today"),
-              Tab(text: "Weekly"),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

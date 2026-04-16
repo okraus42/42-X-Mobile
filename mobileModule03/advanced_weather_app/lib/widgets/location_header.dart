@@ -1,3 +1,5 @@
+// widgets/location_header.dart
+
 import 'package:flutter/material.dart';
 
 class LocationHeader extends StatelessWidget {
