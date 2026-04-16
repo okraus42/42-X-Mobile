@@ -1,4 +1,4 @@
-// widgets/location_header.dart
+// lib/widgets/location_header.dart
 
 import 'package:flutter/material.dart';
 
@@ -10,33 +10,47 @@ class LocationHeader extends StatelessWidget {
     required this.location,
   });
 
-  bool _isGps(String text) {
-    return RegExp(r'^\d+\.\d+,\s*\d+\.\d+$').hasMatch(text);
-  }
-
   @override
   Widget build(BuildContext context) {
-    final isGps = _isGps(location);
+    final parts = location.split(',');
 
-    if (isGps) {
+    if (parts.length == 1) {
       return Text(
-        location,
+        parts.first.trim(),
         textAlign: TextAlign.center,
-        style: const TextStyle(fontSize: 14),
+        style: const TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
       );
     }
 
-    final parts = location.split(',');
-
     return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: parts.map((p) {
-        return Text(
-          p.trim(),
+      children: [
+        // 🟢 CITY (big + bold)
+        Text(
+          parts.first.trim(),
           textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 14),
-        );
-      }).toList(),
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+
+        const SizedBox(height: 2),
+
+        // 🟢 REGION + COUNTRY
+        Text(
+          parts.skip(1).join(', ').trim(),
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontSize: 13,
+            color: Colors.white70,
+          ),
+        ),
+      ],
     );
   }
 }

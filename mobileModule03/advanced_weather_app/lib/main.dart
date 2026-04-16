@@ -1,4 +1,4 @@
-// main.dart
+// lib/main.dart
 
 import 'package:flutter/material.dart';
 import 'pages/home_page.dart';
@@ -13,11 +13,9 @@ class MyWeatherApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: true, // show debug banner
+      debugShowCheckedModeBanner: false,
       title: 'Weather App',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
+      theme: ThemeData(primarySwatch: Colors.blue),
       home: const HomePage(),
     );
   }

@@ -1,4 +1,4 @@
-// services/weather_sevice.dart
+// lib/services/weather_service.dart
 
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -6,40 +6,6 @@ import 'package:http/http.dart' as http;
 import '../models/weather.dart';
 
 class WeatherService {
-  static String _weatherCodeToString(int code) {
-    switch (code) {
-      case 0:
-        return "Clear sky";
-      case 1:
-        return "Mainly clear";
-      case 2:
-        return "Partly cloudy";
-      case 3:
-        return "Overcast";
-      case 45:
-      case 48:
-        return "Fog";
-      case 51:
-      case 53:
-      case 55:
-        return "Drizzle";
-      case 61:
-      case 63:
-      case 65:
-        return "Rain";
-      case 71:
-      case 73:
-      case 75:
-        return "Snow";
-      case 80:
-      case 81:
-      case 82:
-        return "Rain showers";
-      default:
-        return "Unknown";
-    }
-  }
-
   static Future<WeatherData> fetchWeather({
     required double lat,
     required double lon,
@@ -54,7 +20,8 @@ class WeatherService {
       "&timezone=auto",
     );
 
-    final response = await http.get(url);
+    final response =
+        await http.get(url).timeout(const Duration(seconds: 10));
 
     if (response.statusCode != 200) {
       throw Exception("API error");
@@ -74,18 +41,20 @@ class WeatherService {
     final dailyMax = List<double>.from(data['daily']['temperature_2m_max']);
     final dailyCodes = List<int>.from(data['daily']['weathercode']);
 
+    final hourlyCount = hourlyTemps.length.clamp(0, 24);
+
     return WeatherData(
       locationName: locationName,
       temperature: current['temperature'],
       windSpeed: current['windspeed'],
-      description: _weatherCodeToString(current['weathercode']),
+      weatherCode: current['weathercode'],
 
-      hourly: List.generate(24, (i) {
+      hourly: List.generate(hourlyCount, (i) {
         return HourlyWeather(
           time: hourlyTimes[i].substring(11, 16),
           temp: hourlyTemps[i],
           wind: hourlyWinds[i],
-          description: _weatherCodeToString(hourlyCodes[i]),
+          code: hourlyCodes[i],
         );
       }),
 
@@ -94,7 +63,7 @@ class WeatherService {
           date: dailyTimes[i],
           minTemp: dailyMin[i],
           maxTemp: dailyMax[i],
-          description: _weatherCodeToString(dailyCodes[i]),
+          code: dailyCodes[i],
         );
       }),
     );

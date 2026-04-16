@@ -1,22 +1,19 @@
-// widgets/search_bar.dart
+// lib/widgets/search_bar.dart
 
 import 'dart:async';
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 
 import '../models/city.dart';
+import '../services/city_service.dart';
 
 class SearchBarWidget extends StatefulWidget {
   final TextEditingController controller;
-  final ValueChanged<String> onSubmitted;
   final Function(City) onCitySelected;
   final VoidCallback onLocationPressed;
 
   const SearchBarWidget({
     super.key,
     required this.controller,
-    required this.onSubmitted,
     required this.onCitySelected,
     required this.onLocationPressed,
   });
@@ -29,15 +26,9 @@ class _SearchBarWidgetState extends State<SearchBarWidget> {
   List<City> _suggestions = [];
   bool _isLoading = false;
 
-  final FocusNode _focusNode = FocusNode();
   Timer? _debounce;
 
-  // 🚨 prevents race conditions between GPS + search
-  bool _isGpsActive = false;
-
-  Future<void> _fetchSuggestions(String query) async {
-    if (_isGpsActive) return;
-
+  Future<void> _search(String query) async {
     if (query.isEmpty) {
       setState(() => _suggestions = []);
       return;
@@ -45,96 +36,50 @@ class _SearchBarWidgetState extends State<SearchBarWidget> {
 
     setState(() => _isLoading = true);
 
-    final url = Uri.parse(
-      "https://geocoding-api.open-meteo.com/v1/search?name=$query&count=5",
-    );
-
     try {
-      final response = await http.get(url);
+      final results = await CityService.search(query);
 
-      // ignore stale responses during GPS mode
-      if (_isGpsActive) return;
+      if (!mounted) return;
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final List results = data['results'] ?? [];
-
-        setState(() {
-          _suggestions =
-              results.map((e) => City.fromJson(e)).take(5).toList();
-        });
-      }
+      setState(() => _suggestions = results);
     } catch (_) {
-      if (!_isGpsActive) {
-        setState(() => _suggestions = []);
-      }
+      if (!mounted) return;
+      setState(() => _suggestions = []);
     }
 
-    if (!_isGpsActive) {
-      setState(() => _isLoading = false);
-    }
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+  }
+
+  void _onChanged(String value) {
+    _debounce?.cancel();
+    _debounce = Timer(
+      const Duration(milliseconds: 300),
+      () => _search(value),
+    );
   }
 
   void _selectCity(City city) {
     widget.controller.text = city.name;
-
     FocusScope.of(context).unfocus();
-    _focusNode.unfocus();
-
     setState(() => _suggestions = []);
-
     widget.onCitySelected(city);
   }
 
-  void _handleSubmit(String value) {
-    if (_isGpsActive) return;
-
-    final hasSuggestions = _suggestions.isNotEmpty;
-    final topCity = hasSuggestions ? _suggestions.first : null;
-
-    FocusScope.of(context).unfocus();
-    _focusNode.unfocus();
-
-    setState(() => _suggestions = []);
-
-    if (topCity != null) {
-      widget.controller.text = topCity.name;
-      widget.onCitySelected(topCity);
-    } else {
-      widget.onSubmitted(value);
-    }
-  }
-
   void _handleGps() {
-    _isGpsActive = true;
-
-    // cancel pending debounce search immediately
     _debounce?.cancel();
-
-    // clear input + UI instantly
     widget.controller.clear();
-
     FocusScope.of(context).unfocus();
-    _focusNode.unfocus();
-
     setState(() {
       _suggestions = [];
       _isLoading = false;
     });
-
-    // trigger parent GPS fetch
     widget.onLocationPressed();
-
-    // release lock after short delay
-    Future.delayed(const Duration(milliseconds: 600), () {
-      _isGpsActive = false;
-    });
   }
 
   @override
   void dispose() {
     _debounce?.cancel();
-    _focusNode.dispose();
     super.dispose();
   }
 
@@ -144,154 +89,117 @@ class _SearchBarWidgetState extends State<SearchBarWidget> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Padding(
-          padding: EdgeInsets.only(left: 4, bottom: 6),
+          padding: EdgeInsets.only(left: 4, bottom: 4),
           child: Text(
-            "Search for a city",
+            "Search city",
             style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: Colors.black54,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: Colors.white70,
             ),
           ),
         ),
 
         Row(
           children: [
+            // 🟣 GLASS SEARCH FIELD
             Expanded(
-              child: TextField(
-                controller: widget.controller,
-                focusNode: _focusNode,
-
-                onSubmitted: _handleSubmit,
-
-                onChanged: (value) {
-                  if (_isGpsActive) return;
-
-                  _debounce?.cancel();
-                  _debounce = Timer(
-                    const Duration(milliseconds: 350),
-                    () => _fetchSuggestions(value),
-                  );
-                },
-
-                textInputAction: TextInputAction.search,
-
-                decoration: InputDecoration(
-                  hintText: 'Search city...',
-                  filled: true,
-                  fillColor: Colors.white,
-                  prefixIcon: const Icon(Icons.search),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
+              child: Container(
+                height: 38, // 🔥 thinner
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.18), // glass effect
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.25),
                   ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    vertical: 14,
-                    horizontal: 12,
+                ),
+                child: TextField(
+                  controller: widget.controller,
+                  onChanged: _onChanged,
+                  textAlignVertical: TextAlignVertical.center,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Colors.white,
+                  ),
+                  decoration: const InputDecoration(
+                    isDense: true,
+                    hintText: "Search city...",
+                    hintStyle: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 13,
+                    ),
+                    prefixIcon: Icon(
+                      Icons.search,
+                      size: 18,
+                      color: Colors.white70,
+                    ),
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 10,
+                    ),
                   ),
                 ),
               ),
             ),
 
-            const SizedBox(width: 10),
+            const SizedBox(width: 8),
 
+            // 🟣 GLASS GPS BUTTON
             Container(
+              height: 38,
+              width: 38,
               decoration: BoxDecoration(
-                color: Colors.blue.shade50,
+                color: Colors.white.withOpacity(0.18),
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.blue.shade100),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.25),
+                ),
               ),
               child: IconButton(
+                padding: EdgeInsets.zero,
+                iconSize: 18,
                 tooltip: "Use my location",
-                icon: const Icon(Icons.gps_fixed),
-                color: Colors.blue,
+                icon: const Icon(
+                  Icons.gps_fixed,
+                  color: Colors.white,
+                ),
                 onPressed: _handleGps,
               ),
             ),
           ],
         ),
 
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
 
+        // 🔄 loading
         if (_isLoading)
-          const Padding(
-            padding: EdgeInsets.all(8),
-            child: LinearProgressIndicator(),
+          const LinearProgressIndicator(
+            minHeight: 2,
+            color: Colors.white70,
+            backgroundColor: Colors.transparent,
           ),
 
+        // 📍 suggestions
         if (_suggestions.isNotEmpty)
           Container(
-            margin: const EdgeInsets.only(top: 8),
+            margin: const EdgeInsets.only(top: 6),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.shade200),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                )
-              ],
             ),
-            constraints: BoxConstraints(
-              maxHeight: MediaQuery.of(context).size.height * 0.35,
-            ),
-            child: ListView.separated(
+            child: ListView.builder(
               shrinkWrap: true,
               itemCount: _suggestions.length,
-              separatorBuilder: (_, __) => Divider(
-                height: 1,
-                color: Colors.grey.shade200,
-              ),
               itemBuilder: (context, index) {
                 final city = _suggestions[index];
 
-                return InkWell(
+                return ListTile(
+                  dense: true,
+                  visualDensity: VisualDensity.compact,
+                  title: Text(city.name),
+                  subtitle: Text("${city.region}, ${city.country}"),
                   onTap: () => _selectCity(city),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 12,
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.location_city,
-                          size: 18,
-                          color: Colors.blueGrey,
-                        ),
-                        const SizedBox(width: 10),
-
-                        Expanded(
-                          child: RichText(
-                            overflow: TextOverflow.ellipsis,
-                            text: TextSpan(
-                              style: const TextStyle(
-                                fontSize: 13.5,
-                                color: Colors.black,
-                              ),
-                              children: [
-                                TextSpan(
-                                  text: city.name,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                TextSpan(
-                                  text:
-                                      " • ${city.region}, ${city.country}",
-                                  style: TextStyle(
-                                    color: Colors.grey.shade600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
                 );
               },
             ),
