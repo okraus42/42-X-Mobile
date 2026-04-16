@@ -1,48 +1,48 @@
-// weekly_tab.dart
-
 import 'package:flutter/material.dart';
+import '../models/weather.dart';
+import '../widgets/location_header.dart';
 
 class WeeklyTab extends StatelessWidget {
-  final String location;
+  final WeatherData? weather;
+  final String? error;
 
-  const WeeklyTab({
-    super.key,
-    required this.location,
-  });
+  const WeeklyTab({super.key, this.weather, this.error});
 
   @override
   Widget build(BuildContext context) {
-    final days = [
-      "Monday",
-      "Tuesday",
-      "Wednesday",
-      "Thursday",
-      "Friday",
-      "Saturday",
-      "Sunday",
-    ];
+    if (error != null) {
+      return Center(
+        child: Text(error!, style: const TextStyle(color: Colors.red)),
+      );
+    }
 
-    return ListView(
-      padding: const EdgeInsets.all(16),
+    if (weather == null) {
+      return const Center(child: Text("No data"));
+    }
+
+    return Column(
       children: [
-        Center(
-          child: Text(
-            "Weekly Forecast - ${location.isEmpty ? "No location selected" : location}",
-            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+        const SizedBox(height: 10),
+
+        LocationHeader(location: weather!.locationName),
+
+        const SizedBox(height: 10),
+
+        Expanded(
+          child: ListView(
+            children: weather!.daily.map((d) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Text(
+                    "${d.date}    ${d.minTemp}°C    ${d.maxTemp}°C    ${d.description}",
+                  ),
+                ),
+              );
+            }).toList(),
           ),
         ),
-
-        const SizedBox(height: 20),
-
-        for (final day in days)
-          Card(
-            child: ListTile(
-              leading: const Icon(Icons.calendar_today),
-              title: Text(day),
-              subtitle: const Text("Weather: --"),
-              trailing: const Text("--°C"),
-            ),
-          ),
       ],
     );
   }

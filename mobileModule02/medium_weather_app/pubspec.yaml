@@ -38,6 +38,9 @@ dependencies:
   # used to get device's gps coordinates
   geolocator: ^11.0.0
 
+  # for api
+  http: ^1.2.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

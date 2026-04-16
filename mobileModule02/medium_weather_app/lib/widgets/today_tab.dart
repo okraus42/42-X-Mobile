@@ -1,39 +1,48 @@
-// today_tab.dart
-
 import 'package:flutter/material.dart';
+import '../models/weather.dart';
+import '../widgets/location_header.dart';
 
 class TodayTab extends StatelessWidget {
-  final String location;
+  final WeatherData? weather;
+  final String? error;
 
-  const TodayTab({
-    super.key,
-    required this.location,
-  });
+  const TodayTab({super.key, this.weather, this.error});
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(16),
+    if (error != null) {
+      return Center(
+        child: Text(error!, style: const TextStyle(color: Colors.red)),
+      );
+    }
+
+    if (weather == null) {
+      return const Center(child: Text("No data"));
+    }
+
+    return Column(
       children: [
-        Center(
-          child: Text(
-            "Today - ${location.isEmpty ? "No location selected" : location}",
-            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+        const SizedBox(height: 10),
+
+        LocationHeader(location: weather!.locationName),
+
+        const SizedBox(height: 10),
+
+        Expanded(
+          child: ListView(
+            children: weather!.hourly.map((h) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Text(
+                    "${h.time}    ${h.temp}°C    ${h.description}    ${h.wind} km/h",
+                  ),
+                ),
+              );
+            }).toList(),
           ),
         ),
-
-        const SizedBox(height: 20),
-
-        // placeholder hourly forecast
-        for (int i = 0; i < 6; i++)
-          Card(
-            child: ListTile(
-              leading: const Icon(Icons.access_time),
-              title: Text("${8 + i * 2}:00"),
-              subtitle: const Text("Weather: --"),
-              trailing: const Text("--°C"),
-            ),
-          ),
       ],
     );
   }
