@@ -153,11 +153,14 @@ class _HomePageState extends State<HomePage> {
         // ❗ IMPORTANT: TabBar must NOT force layout height
         bottomNavigationBar: const Material(
           child: TabBar(
-            tabs: [
-              Tab(text: "Currently"),
-              Tab(text: "Today"),
-              Tab(text: "Weekly"),
+            tabs: const [
+              Tab(icon: Icon(Icons.access_time), text: 'Currently'),
+              Tab(icon: Icon(Icons.today), text: 'Today'),
+              Tab(icon: Icon(Icons.calendar_view_week), text: 'Weekly'),
             ],
+            labelColor: Colors.blue,
+            unselectedLabelColor: Colors.grey,
+            indicatorColor: Colors.blue,
           ),
         ),
       ),
