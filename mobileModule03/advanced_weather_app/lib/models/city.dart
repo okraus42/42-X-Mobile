@@ -1,3 +1,5 @@
+// lib/models/city.dart
+
 class City {
   final String name;
   final String country;

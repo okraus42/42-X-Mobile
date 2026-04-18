@@ -17,10 +17,10 @@ class CurrentTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final weather = controller.weather;
 
-    if (controller.error != null) {
+    if (controller.errorMessage != null) {
       return Center(
         child: Text(
-          controller.error!,
+          controller.errorMessage!,
           style: const TextStyle(color: Colors.red),
         ),
       );

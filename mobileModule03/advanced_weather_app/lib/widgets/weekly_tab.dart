@@ -20,12 +20,29 @@ class WeeklyTab extends StatelessWidget {
     return days[date.weekday - 1];
   }
 
+  /*
+    Same Y-axis logic as today chart
+
+    Ensures consistent scaling between charts
+  */
+  List<double> _calculateYAxis(List<double> values) {
+    final min = values.reduce((a, b) => a < b ? a : b);
+    final max = values.reduce((a, b) => a > b ? a : b);
+
+    final minRounded = (min / 5).floor() * 5;
+    final maxRounded = (max / 5).ceil() * 5 + 5;
+
+    return [minRounded.toDouble(), maxRounded.toDouble()];
+  }
+
   @override
   Widget build(BuildContext context) {
-    if (controller.error != null) {
+    if (controller.errorMessage != null) {
       return Center(
-        child: Text(controller.error!,
-            style: const TextStyle(color: Colors.red)),
+        child: Text(
+          controller.errorMessage!,
+          style: const TextStyle(color: Colors.red),
+        ),
       );
     }
 
@@ -39,6 +56,16 @@ class WeeklyTab extends StatelessWidget {
 
     final daily = weather.daily;
 
+    final temps = [
+      ...daily.map((e) => e.minTemp),
+      ...daily.map((e) => e.maxTemp),
+    ];
+
+    final yBounds = _calculateYAxis(temps);
+
+    final minY = yBounds[0];
+    final maxY = yBounds[1];
+
     return SingleChildScrollView(
       padding: const EdgeInsets.only(bottom: 20),
       child: Column(
@@ -49,7 +76,11 @@ class WeeklyTab extends StatelessWidget {
 
           const SizedBox(height: 12),
 
-          // 📊 CHART
+          /*
+            WEEKLY TEMPERATURE CHART
+            - min + max lines
+            - consistent 5°C axis scaling
+          */
           ClipRRect(
             borderRadius: BorderRadius.circular(20),
             child: BackdropFilter(
@@ -64,8 +95,12 @@ class WeeklyTab extends StatelessWidget {
                 ),
                 child: LineChart(
                   LineChartData(
+                    minY: minY,
+                    maxY: maxY,
+
                     borderData: FlBorderData(show: false),
                     gridData: FlGridData(show: true),
+
                     titlesData: FlTitlesData(
                       bottomTitles: AxisTitles(
                         sideTitles: SideTitles(
@@ -86,9 +121,11 @@ class WeeklyTab extends StatelessWidget {
                           },
                         ),
                       ),
+
                       leftTitles: AxisTitles(
                         sideTitles: SideTitles(
                           showTitles: true,
+                          interval: 5,
                           getTitlesWidget: (value, _) {
                             return Text(
                               "${value.toInt()}°",
@@ -100,6 +137,7 @@ class WeeklyTab extends StatelessWidget {
                           },
                         ),
                       ),
+
                       topTitles: const AxisTitles(
                         sideTitles: SideTitles(showTitles: false),
                       ),
@@ -107,23 +145,18 @@ class WeeklyTab extends StatelessWidget {
                         sideTitles: SideTitles(showTitles: false),
                       ),
                     ),
+
                     lineBarsData: [
                       LineChartBarData(
                         color: Colors.blueAccent,
                         spots: List.generate(daily.length, (i) {
-                          return FlSpot(
-                            i.toDouble(),
-                            daily[i].minTemp,
-                          );
+                          return FlSpot(i.toDouble(), daily[i].minTemp);
                         }),
                       ),
                       LineChartBarData(
                         color: Colors.redAccent,
                         spots: List.generate(daily.length, (i) {
-                          return FlSpot(
-                            i.toDouble(),
-                            daily[i].maxTemp,
-                          );
+                          return FlSpot(i.toDouble(), daily[i].maxTemp);
                         }),
                       ),
                     ],
@@ -135,7 +168,9 @@ class WeeklyTab extends StatelessWidget {
 
           const SizedBox(height: 12),
 
-          // 📜 LIST
+          /*
+            DAILY SUMMARY CARDS
+          */
           SizedBox(
             height: 110,
             child: ListView.builder(
@@ -156,10 +191,8 @@ class WeeklyTab extends StatelessWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(
-                        _weekday(d.date),
-                        style: const TextStyle(color: Colors.white),
-                      ),
+                      Text(_weekday(d.date),
+                          style: const TextStyle(color: Colors.white)),
                       const SizedBox(height: 6),
                       Icon(icon, color: AppColors.accent, size: 20),
                       const SizedBox(height: 6),

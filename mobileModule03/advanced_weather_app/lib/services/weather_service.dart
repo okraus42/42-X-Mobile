@@ -1,9 +1,17 @@
 // lib/services/weather_service.dart
 
 import 'dart:convert';
+import 'dart:io';
+import 'dart:async';
 import 'package:http/http.dart' as http;
 
 import '../models/weather.dart';
+import '../controllers/weather_controller.dart';
+
+class WeatherException implements Exception {
+  final WeatherErrorType type;
+  WeatherException(this.type);
+}
 
 class WeatherService {
   static Future<WeatherData> fetchWeather({
@@ -20,16 +28,28 @@ class WeatherService {
       "&timezone=auto",
     );
 
-    final response =
-        await http.get(url).timeout(const Duration(seconds: 10));
+    http.Response response;
+
+    try {
+      response =
+          await http.get(url).timeout(const Duration(seconds: 10));
+    } on SocketException {
+      throw WeatherException(WeatherErrorType.noInternet);
+    } on TimeoutException {
+      throw WeatherException(WeatherErrorType.timeout);
+    }
 
     if (response.statusCode != 200) {
-      throw Exception("API error");
+      throw WeatherException(WeatherErrorType.apiError);
     }
 
     final data = jsonDecode(response.body);
 
     final current = data['current_weather'];
+
+    if (current == null) {
+      throw WeatherException(WeatherErrorType.apiError);
+    }
 
     final hourlyTimes = List<String>.from(data['hourly']['time']);
     final hourlyTemps = List<double>.from(data['hourly']['temperature_2m']);

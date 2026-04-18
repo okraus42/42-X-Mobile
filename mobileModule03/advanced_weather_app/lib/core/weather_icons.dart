@@ -9,9 +9,11 @@ class WeatherIcons {
         return Icons.wb_sunny;
 
       case 1:
+        return Icons.wb_cloudy_outlined;
+
       case 2:
       case 3:
-        return Icons.cloud;
+        return Icons.wb_cloudy;
 
       case 45:
       case 48:
@@ -20,7 +22,7 @@ class WeatherIcons {
       case 51:
       case 53:
       case 55:
-        return Icons.grain;
+        return Icons.water_drop_outlined;
 
       case 56:
       case 57:
@@ -29,11 +31,11 @@ class WeatherIcons {
       case 61:
       case 63:
       case 65:
-        return Icons.umbrella;
+        return Icons.water_drop_outlined;
 
       case 66:
       case 67:
-        return Icons.thunderstorm; // freezing rain (storm-like)
+        return Icons.ac_unit; // freezing rain
 
       case 71:
       case 73:
@@ -46,18 +48,18 @@ class WeatherIcons {
       case 80:
       case 81:
       case 82:
-        return Icons.thunderstorm_outlined;
+        return Icons.water_drop;
 
       case 85:
       case 86:
         return Icons.ac_unit; // snow showers
 
       case 95:
-        return Icons.flash_on; // thunderstorm
+        return Icons.thunderstorm_outlined; // thunderstorm
 
       case 96:
       case 99:
-        return Icons.umbrella; // hail storms (better alternative icon)
+        return Icons.thunderstorm_outlined; // hail storms (better alternative icon)
 
       default:
         return Icons.help_outline;

@@ -14,12 +14,33 @@ class TodayTab extends StatelessWidget {
 
   const TodayTab(this.controller, {super.key});
 
+  /*
+    Computes Y-axis bounds for temperature chart
+
+    Rules:
+    - round min down to nearest 5
+    - round max up to nearest 5
+    - add +5 to +10 buffer for visual breathing room
+    - ensure clean 5°C intervals
+  */
+  List<double> _calculateYAxis(List<double> values) {
+    final min = values.reduce((a, b) => a < b ? a : b);
+    final max = values.reduce((a, b) => a > b ? a : b);
+
+    final minRounded = (min / 5).floor() * 5;
+    final maxRounded = (max / 5).ceil() * 5 + 5;
+
+    return [minRounded.toDouble(), maxRounded.toDouble()];
+  }
+
   @override
   Widget build(BuildContext context) {
-    if (controller.error != null) {
+    if (controller.errorMessage != null) {
       return Center(
-        child: Text(controller.error!,
-            style: const TextStyle(color: Colors.red)),
+        child: Text(
+          controller.errorMessage!,
+          style: const TextStyle(color: Colors.red),
+        ),
       );
     }
 
@@ -33,6 +54,12 @@ class TodayTab extends StatelessWidget {
 
     final hourly = weather.hourly;
 
+    final temps = hourly.map((e) => e.temp).toList();
+    final yBounds = _calculateYAxis(temps);
+
+    final minY = yBounds[0];
+    final maxY = yBounds[1];
+
     return SingleChildScrollView(
       padding: const EdgeInsets.only(bottom: 20),
       child: Column(
@@ -43,7 +70,12 @@ class TodayTab extends StatelessWidget {
 
           const SizedBox(height: 12),
 
-          // 📈 CHART
+          /*
+            HOURLY TEMPERATURE CHART
+            - shows smooth curve
+            - now includes visible data points (dots)
+            - uses dynamic Y-axis scaling
+          */
           ClipRRect(
             borderRadius: BorderRadius.circular(20),
             child: BackdropFilter(
@@ -58,8 +90,17 @@ class TodayTab extends StatelessWidget {
                 ),
                 child: LineChart(
                   LineChartData(
+                    minY: minY,
+                    maxY: maxY,
+
                     borderData: FlBorderData(show: false),
                     gridData: FlGridData(show: true),
+
+                    /*
+                      Y-axis labels:
+                      - always step of 5°C
+                      - aligned with computed bounds
+                    */
                     titlesData: FlTitlesData(
                       bottomTitles: AxisTitles(
                         sideTitles: SideTitles(
@@ -80,9 +121,11 @@ class TodayTab extends StatelessWidget {
                           },
                         ),
                       ),
+
                       leftTitles: AxisTitles(
                         sideTitles: SideTitles(
                           showTitles: true,
+                          interval: 5,
                           getTitlesWidget: (value, _) {
                             return Text(
                               "${value.toInt()}°",
@@ -94,6 +137,7 @@ class TodayTab extends StatelessWidget {
                           },
                         ),
                       ),
+
                       topTitles: const AxisTitles(
                         sideTitles: SideTitles(showTitles: false),
                       ),
@@ -101,12 +145,18 @@ class TodayTab extends StatelessWidget {
                         sideTitles: SideTitles(showTitles: false),
                       ),
                     ),
+
                     lineBarsData: [
                       LineChartBarData(
                         isCurved: true,
                         color: AppColors.primary,
                         barWidth: 3,
-                        dotData: const FlDotData(show: false),
+
+                        // IMPORTANT: show data points like weekly chart
+                        dotData: const FlDotData(
+                          show: true,
+                        ),
+
                         spots: List.generate(hourly.length, (i) {
                           return FlSpot(
                             i.toDouble(),
@@ -123,7 +173,9 @@ class TodayTab extends StatelessWidget {
 
           const SizedBox(height: 12),
 
-          // 📜 HOURLY LIST
+          /*
+            HOURLY SCROLL LIST (unchanged)
+          */
           SizedBox(
             height: 140,
             child: ListView.builder(
@@ -144,13 +196,9 @@ class TodayTab extends StatelessWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(
-                        h.time,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.white70,
-                        ),
-                      ),
+                      Text(h.time,
+                          style: const TextStyle(
+                              fontSize: 12, color: Colors.white70)),
                       const SizedBox(height: 8),
                       Icon(icon, color: AppColors.accent, size: 22),
                       const SizedBox(height: 8),
